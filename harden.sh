@@ -171,19 +171,6 @@ check_namespace() {
             end)
         }' | format_json  # Format the JSON output for better readability
 
-
-        # Check actual user IDs
-        echo -e "\nContainer User IDs:"
-        for container in $(oc get pod $pod -n $namespace -o jsonpath='{.spec.containers[*].name}'); do
-            echo -n "Container $container: "
-            uid=$(oc exec $pod -n $namespace -c $container -- id -u 2>/dev/null)
-            if [ "$uid" = "0" ]; then
-                print_color "$RED" "UID=$uid (root)"
-            else
-                print_color "$GREEN" "UID=$uid"
-            fi
-        done
-
         # Check container capabilities and permissions
         echo -e "\nContainer Capabilities and Permissions:"
         for container in $(oc get pod $pod -n $namespace -o jsonpath='{.spec.containers[*].name}'); do
