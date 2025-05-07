@@ -152,10 +152,6 @@ check_namespace() {
     oc get pods -n $namespace -o json | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | while read pod; do
         print_color "$BOLD" "=== Pod: $pod ==="
 
-        # Get pod security context
-        # echo "Pod Security Context:"
-        # oc get pod $pod -n $namespace -o json | jq -r '.spec.securityContext | if . == null then "{}" else . end' | format_json
-
         echo -e "\nContainer Security Contexts:"
         
         # Retrieve the pod's JSON definition and extract the security context for each container
@@ -175,26 +171,6 @@ check_namespace() {
             end)
         }' | format_json  # Format the JSON output for better readability
 
-        # Check filesystem status for each container
-        echo -e "\nContainer Filesystem Status:"
-        
-        # Retrieve the pod's JSON definition and extract the filesystem status for each container
-        # The "readOnlyRootFilesystem" field is checked, and if it is not defined, it defaults to false
-        oc get pod $pod -n $namespace -o json | jq -r '.spec.containers[] | {
-            name: .name,  # Extract the container name
-            readOnlyRootFilesystem: (.securityContext.readOnlyRootFilesystem // false)  # Default to false if not defined
-        }' | while read -r container_info; do
-            # Use regex to extract the container name from the JSON output
-            if [[ $container_info =~ '"name": "('.*')"' ]]; then
-                container_name="${BASH_REMATCH[1]}"  # Capture the container name
-                # Check if the container has a read-only filesystem
-                if [[ $container_info =~ '"readOnlyRootFilesystem": true' ]]; then
-                    print_color "$GREEN" "Container $container_name: Read-only filesystem"  # Indicate secure configuration
-                else
-                    print_color "$RED" "Container $container_name: Writable filesystem (default: false)"  # Indicate insecure configuration
-                fi
-            fi
-        done
 
         # Check actual user IDs
         echo -e "\nContainer User IDs:"
